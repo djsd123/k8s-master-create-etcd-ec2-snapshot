@@ -1,23 +1,22 @@
 package main
 
 import (
+	"./snapshot"
+	"./tags"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"log"
 	"os"
-	"./tags"
-	"./snapshot"
 )
 
 var connection = ec2.New(session.New())
 
-
 func main() {
 
 	// Filter instances with role set to master
-	instanceKeyFilter   := os.Getenv("INSTANCE_TAG_KEY")
+	instanceKeyFilter := os.Getenv("INSTANCE_TAG_KEY")
 	instanceValueFilter := os.Getenv("INSTANCE_TAG_VALUE")
 
 	instanceInput := &ec2.DescribeInstancesInput{
@@ -53,10 +52,10 @@ func main() {
 
 					getVolumesTags := tags.FetchResourceTags(vol_id)
 
-					snapShotID   := *snapShot.SnapshotId
+					snapShotID := *snapShot.SnapshotId
 					instanceName := *instance.Tags[1].Value
-					deviceName   := *blk.DeviceName
-					volumeName   := *getVolumesTags.Tags[1].Value
+					deviceName := *blk.DeviceName
+					volumeName := *getVolumesTags.Tags[1].Value
 
 					Tags := []*ec2.Tag{
 						{
