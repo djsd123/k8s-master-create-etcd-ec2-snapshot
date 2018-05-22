@@ -11,7 +11,10 @@ import (
 	"os"
 )
 
-var connection = ec2.New(session.New())
+var (
+	clientSession = session.Must(session.NewSession())
+	connection    = ec2.New(clientSession)
+)
 
 func main() {
 
@@ -48,9 +51,9 @@ func main() {
 					vol_id := blk.Ebs.VolumeId
 
 					// Perform and tag the snapshot
-					snapShot := create_volume_snapshot.CreateSnapshot(vol_id)
+					snapShot := create_volume_snapshot.CreateSnapshot(connection, vol_id)
 
-					getVolumesTags := tags.FetchResourceTags(vol_id)
+					getVolumesTags := tags.FetchResourceTags(connection, vol_id)
 
 					snapShotID := *snapShot.SnapshotId
 					instanceName := *instance.Tags[1].Value
@@ -71,7 +74,7 @@ func main() {
 							Value: aws.String(volumeName),
 						},
 					}
-					tags.TagResource(snapShotID, Tags)
+					tags.TagResource(connection, snapShotID, Tags)
 				}
 			}
 		}

@@ -7,9 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-var connection = ec2.New(session.New())
-
-func CreateSnapshot(volumeID *string) (snapshot *ec2.Snapshot) {
+func CreateSnapshot(connection *ec2.EC2, volumeID *string) (snapshot *ec2.Snapshot) {
 
 	snapshotInput := &ec2.CreateSnapshotInput{
 		VolumeId: volumeID,
