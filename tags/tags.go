@@ -4,13 +4,10 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-var connection = ec2.New(session.New())
-
-func FetchResourceTags(resourceID *string) (getTagsOutput *ec2.DescribeTagsOutput) {
+func FetchResourceTags(connection *ec2.EC2,resourceID *string) (getTagsOutput *ec2.DescribeTagsOutput) {
 
 	volTagsInput := &ec2.DescribeTagsInput{
 		Filters: []*ec2.Filter{
@@ -42,11 +39,11 @@ func FetchResourceTags(resourceID *string) (getTagsOutput *ec2.DescribeTagsOutpu
 
 }
 
-func TagResource(resourceID *string, tags []*ec2.Tag) {
+func TagResource(connection *ec2.EC2, resourceID string, tags []*ec2.Tag) {
 
 	tagsInput := &ec2.CreateTagsInput{
 		Resources: []*string{
-			aws.String(*resourceID),
+			aws.String(resourceID),
 		},
 		Tags: tags,
 	}
