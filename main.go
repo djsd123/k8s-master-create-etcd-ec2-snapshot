@@ -2,7 +2,7 @@ package main
 
 import (
 	"./snapshot"
-	"./tags"
+	"./tag"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -14,6 +14,8 @@ import (
 var (
 	clientSession = session.Must(session.NewSession())
 	connection    = ec2.New(clientSession)
+	optionalTagKey   = os.Getenv("TAG_KEY")
+	optionalTagVal   = os.Getenv("Tag_VALUE")
 )
 
 func main() {
@@ -48,22 +50,33 @@ func main() {
 				isRootDevice := *blk.Ebs.DeleteOnTermination
 
 				if isRootDevice != true {
-					vol_id := blk.Ebs.VolumeId
+					volumeID := blk.Ebs.VolumeId
+					instanceID := instance.InstanceId
 
 					// Perform and tag the snapshot
-					snapShot := create_volume_snapshot.CreateSnapshot(connection, vol_id)
+					snapShot, err := snapshot.CreateSnapshot(connection, volumeID)
+					if err != nil {
+						log.Printf("Error while taking snapshot of %s: %s", volumeID, err)
+					}
 
-					getVolumesTags := tags.FetchResourceTags(connection, vol_id)
+					_, volumeName, err := tag.FetchResourceTags(connection, volumeID, "Name")
+					if err != nil {
+						log.Printf("Error while getting tags for volume %s: %s", volumeID, err)
+					}
+
+					_, instanceName, err := tag.FetchResourceTags(connection, instanceID, "Name")
+					if err != nil {
+						log.Printf("Error while getting tags for ec2 instance %s: %s", instanceID, err)
+					}
 
 					snapShotID := *snapShot.SnapshotId
-					instanceName := *instance.Tags[1].Value
 					deviceName := *blk.DeviceName
-					volumeName := *getVolumesTags.Tags[1].Value
+
 
 					Tags := []*ec2.Tag{
 						{
-							Key:   aws.String("Instance_Name"),
-							Value: aws.String(instanceName),
+							Key:   aws.String(optionalTagKey),
+							Value: aws.String(optionalTagVal),
 						},
 						{
 							Key:   aws.String("Device_Name"),
@@ -73,8 +86,16 @@ func main() {
 							Key:   aws.String("Name"),
 							Value: aws.String(volumeName),
 						},
+						{
+							Key:   aws.String("Instance_Name"),
+							Value: aws.String(instanceName),
+						},
 					}
-					tags.TagResource(connection, snapShotID, Tags)
+
+					tag.TagResource(connection, snapShotID, Tags)
+					if err != nil {
+						log.Printf("Error while tagging snapshot %s: %s", snapShotID, err)
+					}
 				}
 			}
 		}
